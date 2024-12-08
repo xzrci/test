@@ -1,4 +1,3 @@
-import hashlib
 import os
 import shutil
 import subprocess
@@ -30,24 +29,6 @@ CATEGORIES = [
     "tts",
     "utils",
 ]
-
-
-@Client.on_message(filters.command(["modhash", "mh"], prefix) & filters.me)
-async def get_mod_hash(_, message: Message):
-    if len(message.command) == 1:
-        return
-    url = message.command[1].lower()
-    resp = requests.get(url)
-    if not resp.ok:
-        await message.edit(
-            f"<b>Troubleshooting with downloading module <code>{url}</code></b>"
-        )
-        return
-
-    await message.edit(
-        f"<b>Module hash: <code>{hashlib.sha256(resp.content).hexdigest()}</code>\n"
-        f"Link: <code>{url}</code>\nFile: <code>{url.split('/')[-1]}</code></b>",
-    )
 
 
 @Client.on_message(filters.command(["loadmod", "lm"], prefix) & filters.me)
@@ -84,26 +65,6 @@ async def loadmod(_, message: Message):
                 )
                 return
         else:
-            modules_hashes = requests.get(
-                "https://raw.githubusercontent.com/The-MoonTg-project/custom_modules/main/modules_hashes.txt"
-            ).text
-            resp = requests.get(url)
-
-            if not resp.ok:
-                await message.edit(
-                    f"<b>Troubleshooting with downloading module <code>{url}</code></b>",
-                )
-                return
-
-            if hashlib.sha256(resp.content).hexdigest() not in modules_hashes:
-                return await message.edit(
-                    "<b>Only <a href=https://github.com/The-MoonTg-project/custom_modules/tree/main/modules_hashes.txt>"
-                    "verified</a> modules or from the official "
-                    "<a href=https://github.com/The-MoonTg-project/custom_modules>"
-                    "custom_modules</a> repository are supported!</b>",
-                    disable_web_page_preview=True,
-                )
-
             module_name = url.split("/")[-1].split(".")[0]
 
         resp = requests.get(url)
@@ -119,23 +80,6 @@ async def loadmod(_, message: Message):
     else:
         file_name = await message.reply_to_message.download()
         module_name = message.reply_to_message.document.file_name[:-3]
-
-        with open(file_name, "rb") as f:
-            content = f.read()
-
-        modules_hashes = requests.get(
-            "https://raw.githubusercontent.com/The-MoonTg-project/custom_modules/main/modules_hashes.txt"
-        ).text
-
-        if hashlib.sha256(content).hexdigest() not in modules_hashes:
-            os.remove(file_name)
-            return await message.edit(
-                "<b>Only <a href=https://github.com/The-MoonTg-project/custom_modules/tree/main/modules_hashes.txt>"
-                "verified</a> modules or from the official "
-                "<a href=https://github.com/The-MoonTg-project/custom_modules>"
-                "custom_modules</a> repository are supported!</b>",
-                disable_web_page_preview=True,
-            )
         os.rename(file_name, f"./modules/custom_modules/{module_name}.py")
 
     await message.edit(
