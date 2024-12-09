@@ -52,6 +52,8 @@ async def process_file(message, prompt, model_to_use, file_type, status_msg, dis
 
         # Generate content using the model
         response = model_to_use.generate_content(input_data)
+
+        # Only display the custom prompt if it's set
         result_text = f"**Prompt:** {prompt}\n" if display_prompt else ""
         result_text += f"**Answer:** {response.text}"
         await message.edit_text(result_text, parse_mode=enums.ParseMode.MARKDOWN)
