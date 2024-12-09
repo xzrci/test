@@ -15,7 +15,7 @@ model_cook = genai.GenerativeModel(
     generation_config={"temperature": 0.35, "top_p": 0.95, "top_k": 40, "max_output_tokens": 1024},
 )
 
-async def process_file(message, prompt, model_to_use, file_type, status_msg):
+async def process_file(message, prompt, model_to_use, file_type, status_msg, display_prompt=False):
     """Processes files (image, audio, video) and interacts with Generative AI."""
     await message.edit_text(f"<code>{status_msg}</code>")
     reply = message.reply_to_message
@@ -52,7 +52,9 @@ async def process_file(message, prompt, model_to_use, file_type, status_msg):
 
         # Generate content using the model
         response = model_to_use.generate_content(input_data)
-        await message.edit_text(f"**Prompt:** {prompt}\n**Answer:** {response.text}", parse_mode=enums.ParseMode.MARKDOWN)
+        result_text = f"**Prompt:** {prompt}\n" if display_prompt else ""
+        result_text += f"**Answer:** {response.text}"
+        await message.edit_text(result_text, parse_mode=enums.ParseMode.MARKDOWN)
 
     except Exception as e:
         await message.edit_text(f"<code>Error:</code> {format_exc(e)}")
@@ -64,7 +66,7 @@ async def process_file(message, prompt, model_to_use, file_type, status_msg):
 async def getai(_, message):
     """Analyze an image using Generative AI."""
     prompt = message.text.split(maxsplit=1)[1] if len(message.command) > 1 else "Get details of the image."
-    await process_file(message, prompt, model, "image", "Analyzing image...")
+    await process_file(message, prompt, model, "image", "Analyzing image...", display_prompt=len(message.command) > 1)
 
 @Client.on_message(filters.command("aicook", prefix) & filters.me)
 async def aicook(_, message):
@@ -77,7 +79,7 @@ async def aiseller(_, message):
     if len(message.command) > 1:
         target_audience = message.text.split(maxsplit=1)[1]
         prompt = f"Generate a marketing description for the product.\nTarget Audience: {target_audience}"
-        await process_file(message, prompt, model, "image", "Generating description...")
+        await process_file(message, prompt, model, "image", "Generating description...", display_prompt=False)
     else:
         await message.edit_text(f"<b>Usage:</b> <code>{prefix}aiseller [target audience]</code> [Reply to a product image]")
 
@@ -85,7 +87,7 @@ async def aiseller(_, message):
 async def transcribe(_, message):
     """Transcribe or summarize an audio or video file."""
     prompt = message.text.split(maxsplit=1)[1] if len(message.command) > 1 else "Transcribe this file."
-    await process_file(message, prompt, model, "audio", "Transcribing...")
+    await process_file(message, prompt, model, "audio", "Transcribing...", display_prompt=len(message.command) > 1)
 
 # Module Help
 modules_help["generative"] = {
