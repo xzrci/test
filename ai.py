@@ -3,8 +3,6 @@ import time
 from PIL import Image
 import google.generativeai as genai
 from pyrogram import Client, filters, enums
-from utils.misc import modules_help, prefix
-from utils.scripts import format_exc
 from utils.config import gemini_key
 
 # Configure Generative AI API
@@ -38,7 +36,6 @@ async def process_file(message, prompt, model_to_use, file_type, status_msg, dis
         elif file_type in ["audio", "video"] and (reply.audio or reply.voice or reply.video or reply.video_note):
             uploaded_file = genai.upload_file(file_path)
             while uploaded_file.state.name == "PROCESSING":
-                await message.edit_text("<code>Processing file...</code>")
                 time.sleep(5)
                 uploaded_file = genai.get_file(uploaded_file.name)
 
@@ -59,7 +56,7 @@ async def process_file(message, prompt, model_to_use, file_type, status_msg, dis
         await message.edit_text(result_text, parse_mode=enums.ParseMode.MARKDOWN)
 
     except Exception as e:
-        await message.edit_text(f"<code>Error:</code> {format_exc(e)}")
+        await message.edit_text(f"<code>Error:</code> {str(e)}")
     finally:
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -97,4 +94,4 @@ modules_help["generative"] = {
     "aicook [reply to image]*": "Identify food and generate cooking instructions.",
     "aiseller [target audience] [reply to image]*": "Generate marketing descriptions for products.",
     "transcribe [custom prompt] [reply to audio/video]*": "Transcribe or summarize an audio or video file.",
-  }
+        }
