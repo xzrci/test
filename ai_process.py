@@ -8,25 +8,21 @@ from utils.config import gemini_key
 from utils.misc import prefix
 from utils.scripts import modules_help
 
-# Configure the Gemini API
 genai.configure(api_key=gemini_key)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
-# Helper function to split long messages into smaller chunks
 def split_message(text, max_length=4000):
     return [text[i:i + max_length] for i in range(0, len(text), max_length)]
 
-# Helper function to handle file uploads and processing
 async def upload_file(file_path, file_type):
     uploaded_file = genai.upload_file(file_path)
     while uploaded_file.state.name == "PROCESSING":
-        await asyncio.sleep(10)  # Non-blocking wait
+        await asyncio.sleep(10)
         uploaded_file = genai.get_file(uploaded_file.name)
     if uploaded_file.state.name == "FAILED":
         raise ValueError(f"{file_type.capitalize()} failed to process")
     return uploaded_file
 
-# Function to determine file type and prepare for processing
 async def prepare_file(reply, file_path, prompt):
     if reply.photo:
         with Image.open(file_path) as img:
@@ -43,28 +39,21 @@ async def prepare_file(reply, file_path, prompt):
     else:
         raise ValueError("Unsupported file type")
 
-# Main file processing function
-async def process_file(message, prompt):
+async def process_file(message, prompt, is_custom_prompt):
     reply = message.reply_to_message
     if not reply:
-        return await message.edit_text(
-            f"<b>Usage:</b> <code>{prefix}{message.command[0]} [prompt]</code> [Reply to a file]"
-        )
-
+        return await message.edit_text(f"<b>Usage:</b> <code>{prefix}{message.command[0]} [prompt]</code> [Reply to a file]")
     file_path = await reply.download()
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         return await message.edit_text("<code>Failed to process the file. Try again.</code>")
-
     try:
         input_data = await prepare_file(reply, file_path, prompt)
         response = model.generate_content(input_data)
-
         result_text = (
-            f"**Prompt:** {prompt}\n**Answer:** {response.text}"
-            if response and response.text
+            (f"**Prompt:** {prompt}\n" if is_custom_prompt else "")
+            + f"**Answer:** {response.text}" if response and response.text
             else f"**Prompt:** {prompt}\n<code>No content generated.</code>"
         )
-
         if len(result_text) > 4000:
             for chunk in split_message(result_text):
                 await message.reply_text(chunk, parse_mode=enums.ParseMode.MARKDOWN)
@@ -79,18 +68,14 @@ async def process_file(message, prompt):
         if os.path.exists(file_path):
             os.remove(file_path)
 
-# Command handler for file processing
 @Client.on_message(filters.command(["process", "pr"], prefix) & filters.me)
 async def process_generic_file(_, message):
-    prompt = (
-        message.text.split(maxsplit=1)[1]
-        if len(message.command) > 1
-        else "Deeply analyze it, write complete details about it."
-    )
+    args = message.text.split(maxsplit=1)
+    is_custom_prompt = len(args) > 1
+    prompt = args[1] if is_custom_prompt else "Deeply analyze it, write complete details about it."
     await message.edit_text("<code>Processing file...</code>")
-    await process_file(message, prompt)
+    await process_file(message, prompt, is_custom_prompt)
 
-# Module help information
 modules_help["aimage"] = {
     "process [prompt] [reply to any file]*": "Process any file (image, audio, video, video note, PDF, or document).",
-    }
+}
