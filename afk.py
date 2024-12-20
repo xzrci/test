@@ -1,26 +1,8 @@
-#  Moon-Userbot - telegram userbot
-#  Copyright (C) 2020-present Moon Userbot Organization
-#
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 import asyncio
 from datetime import datetime
-
 import humanize
 from pyrogram import Client, filters
 from pyrogram.types import Message
-
 from utils.misc import modules_help, prefix
 from utils.scripts import ReplyCheck
 from utils.db import db
@@ -44,9 +26,6 @@ def subtract_time(start, end):
     return str(subtracted)
 
 
-# Main
-
-
 @Client.on_message(
     ((filters.group & filters.mentioned) | filters.private)
     & ~filters.me
@@ -63,50 +42,52 @@ async def collect_afk_messages(bot: Client, message: Message):
             text = db.get("core.afk", "afk_msg", None)
             if text is None:
                 text = (
-                    f"<b>Beep boop. This is an automated message.\n"
-                    f"I am not available right now.\n"
-                    f"Last seen: {last_seen}\n"
-                    f"Reason: <code>{AFK_REASON.upper()}</code>\n"
-                    f"See you after I'm done doing whatever I'm doing.</b>"
+                    
+                    f"<blockquote>I'm unavailable (<i>since {last_seen}</i>).</blockquote>\n"
+f"<blockquote>"
+                    f"<b>Reason:</b> {AFK_REASON}.\n"
+                    f"Back soon. 👋\n"
+                    f"</blockquote>"
                 )
             else:
                 last_seen = last_seen.replace("ago", "").strip()
-                text = text.format(last_seen=last_seen, reason=AFK_REASON)
+                text = f"<pre>\n{text.format(last_seen=last_seen, reason=AFK_REASON)}\n</pre>"
+
             await bot.send_message(
                 chat_id=GetChatID(message),
                 text=text,
-                reply_to_message_id=ReplyCheck(message),
             )
             CHAT_TYPE[GetChatID(message)] = 1
             return
-        if GetChatID(message) in CHAT_TYPE:
-            if CHAT_TYPE[GetChatID(message)] == 50:
-                text = (
-                    f"<b>This is an automated message\n"
-                    f"Last seen: {last_seen}\n"
-                    f"This is the 10th time I've told you I'm AFK right now...\n"
-                    f"I'll get to you when I get to you.\n"
-                    f"No more auto messages for you</b>"
-                )
-                await bot.send_message(
-                    chat_id=GetChatID(message),
-                    text=text,
-                    reply_to_message_id=ReplyCheck(message),
-                )
-            elif CHAT_TYPE[GetChatID(message)] > 50:
-                return
-            elif CHAT_TYPE[GetChatID(message)] % 5 == 0:
-                text = (
-                    f"<b>Hey I'm still not back yet.\n"
-                    f"Last seen: {last_seen}\n"
-                    f"Still busy: <code>{AFK_REASON.upper()}</code>\n"
-                    f"Try pinging a bit later.</b>"
-                )
-                await bot.send_message(
-                    chat_id=GetChatID(message),
-                    text=text,
-                    reply_to_message_id=ReplyCheck(message),
-                )
+
+        if CHAT_TYPE[GetChatID(message)] == 50:
+            text = (
+                
+                f"<blockquote>I'm unavailable (<i>since {last_seen}</i>).</blockquote>\n"
+f"<blockquote>"
+                f"This is the 10th time I've told you I'm AFK right now...\n"
+                f"Back soon. 👋\n"
+                f"</blockquote>"
+            )
+            await bot.send_message(
+                chat_id=GetChatID(message),
+                text=text,
+            )
+        elif CHAT_TYPE[GetChatID(message)] > 50:
+            return
+        elif CHAT_TYPE[GetChatID(message)] % 5 == 0:
+            text = (
+                
+                f"<blockquote>I'm unavailable (<i>since {last_seen}</i>).</blockquote>\n"
+                f"<blockquote>"
+f"<b>Reason:</b> {AFK_REASON}.\n"
+                f"Back soon. 👋\n"
+                f"</blockquote>"
+            )
+            await bot.send_message(
+                chat_id=GetChatID(message),
+                text=text,
+            )
 
         CHAT_TYPE[GetChatID(message)] += 1
 
@@ -137,8 +118,11 @@ async def afk_unset(_, message: Message):
     if AFK:
         last_seen = subtract_time(datetime.now(), AFK_TIME).replace("ago", "").strip()
         await message.edit(
-            f"<code>While you were away (for {last_seen}), you received {sum(USERS.values()) + sum(GROUPS.values())} "
-            f"messages from {len(USERS) + len(GROUPS)} chats</code>",
+            f"<pre>\n"
+            f"While you were away (for {last_seen}), you received "
+            f"{sum(USERS.values()) + sum(GROUPS.values())} messages "
+            f"from {len(USERS) + len(GROUPS)} chats.\n"
+            f"</pre>"
         )
         AFK = False
         AFK_TIME = ""
@@ -180,7 +164,7 @@ async def set_afk_msg(_, message: Message):
     if old_afk_msg:
         db.remove("core.afk", "afk_msg")
     db.set("core.afk", "afk_msg", afk_msg)
-    await message.edit(f"AFK message set to:\n\n{afk_msg}")
+    await message.edit(f"AFK message set to:\n\n<pre>{afk_msg}</pre>")
 
 
 @Client.on_message(filters.me, group=3)
@@ -190,8 +174,11 @@ async def auto_afk_unset(_, message: Message):
     if AFK:
         last_seen = subtract_time(datetime.now(), AFK_TIME).replace("ago", "").strip()
         reply = await message.reply(
-            f"<code>While you were away (for {last_seen}), you received {sum(USERS.values()) + sum(GROUPS.values())} "
-            f"messages from {len(USERS) + len(GROUPS)} chats</code>"
+            f"<pre>\n"
+            f"While you were away (for {last_seen}), you received "
+            f"{sum(USERS.values()) + sum(GROUPS.values())} messages "
+            f"from {len(USERS) + len(GROUPS)} chats.\n"
+            f"</pre>"
         )
         AFK = False
         AFK_TIME = ""
@@ -203,7 +190,7 @@ async def auto_afk_unset(_, message: Message):
 
 
 modules_help["afk"] = {
-    "afk [reason]": "Go to AFK mode with reason as anything after .afk\nUsage: <code>.afk <reason></code>",
-    "unafk": "Get out of AFK",
-    "setafkmsg [reply to message]*": "Set your AFK message. Use <code>{reason}</code> and <code>{last_seen}</code> to indicate where the reason and last seen time will be placed.",
-}
+    "afk [reason]": "Go to AFK mode with a reason.\nUsage: <code>.afk <reason></code>",
+    "unafk": "Exit AFK mode.",
+    "setafkmsg [reply to message]*": "Set your AFK message. Use <code>{reason}</code> and <code>{last_seen}</code> to indicate where placeholders will be replaced.",
+        }
