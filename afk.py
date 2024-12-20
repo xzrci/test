@@ -10,7 +10,7 @@ from utils.db import db
 # Variables
 AFK = False
 AFK_REASON = ""
-DEFAULT_AFK_REASON = "Negotiating with aliens."
+DEFAULT_AFK_REASON = "Negotiating with aliens"
 AFK_TIME = ""
 USERS = {}
 GROUPS = {}
