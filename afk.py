@@ -44,7 +44,7 @@ async def collect_afk_messages(bot: Client, message: Message):
                 text = (
                     
                     f"<blockquote>I'm unavailable (<i>since {last_seen}</i>).</blockquote>\n"
-f"<blockquote>"
+                    f"<blockquote>"
                     f"<b>Reason:</b> {AFK_REASON}.\n"
                     f"Back soon. 👋\n"
                     f"</blockquote>"
@@ -64,7 +64,7 @@ f"<blockquote>"
             text = (
                 
                 f"<blockquote>I'm unavailable (<i>since {last_seen}</i>).</blockquote>\n"
-f"<blockquote>"
+                f"<blockquote>"
                 f"This is the 10th time I've told you I'm AFK right now...\n"
                 f"Back soon. 👋\n"
                 f"</blockquote>"
@@ -80,7 +80,7 @@ f"<blockquote>"
                 
                 f"<blockquote>I'm unavailable (<i>since {last_seen}</i>).</blockquote>\n"
                 f"<blockquote>"
-f"<b>Reason:</b> {AFK_REASON}.\n"
+                f"<b>Reason:</b> {AFK_REASON}.\n"
                 f"Back soon. 👋\n"
                 f"</blockquote>"
             )
@@ -118,11 +118,11 @@ async def afk_unset(_, message: Message):
     if AFK:
         last_seen = subtract_time(datetime.now(), AFK_TIME).replace("ago", "").strip()
         await message.edit(
-            f"<pre>\n"
+            f"<blockquote>\n"
             f"While you were away (for {last_seen}), you received "
             f"{sum(USERS.values()) + sum(GROUPS.values())} messages "
             f"from {len(USERS) + len(GROUPS)} chats.\n"
-            f"</pre>"
+            f"</blockquote>"
         )
         AFK = False
         AFK_TIME = ""
@@ -174,11 +174,11 @@ async def auto_afk_unset(_, message: Message):
     if AFK:
         last_seen = subtract_time(datetime.now(), AFK_TIME).replace("ago", "").strip()
         reply = await message.reply(
-            f"<pre>\n"
+            f"<blockquote>\n"
             f"While you were away (for {last_seen}), you received "
             f"{sum(USERS.values()) + sum(GROUPS.values())} messages "
             f"from {len(USERS) + len(GROUPS)} chats.\n"
-            f"</pre>"
+            f"</blockquote>"
         )
         AFK = False
         AFK_TIME = ""
@@ -193,4 +193,4 @@ modules_help["afk"] = {
     "afk [reason]": "Go to AFK mode with a reason.\nUsage: <code>.afk <reason></code>",
     "unafk": "Exit AFK mode.",
     "setafkmsg [reply to message]*": "Set your AFK message. Use <code>{reason}</code> and <code>{last_seen}</code> to indicate where placeholders will be replaced.",
-        }
+}
