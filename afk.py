@@ -10,6 +10,7 @@ from utils.db import db
 # Variables
 AFK = False
 AFK_REASON = ""
+DEFAULT_AFK_REASON = "Negotiating with aliens."
 AFK_TIME = ""
 USERS = {}
 GROUPS = {}
@@ -97,10 +98,7 @@ async def afk_set(_, message: Message):
     global AFK_REASON, AFK, AFK_TIME
 
     cmd = message.command
-    afk_text = ""
-
-    if len(cmd) > 1:
-        afk_text = " ".join(cmd[1:])
+    afk_text = DEFAULT_AFK_REASON if len(cmd) == 1 else " ".join(cmd[1:])
 
     if isinstance(afk_text, str):
         AFK_REASON = afk_text
