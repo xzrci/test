@@ -15,19 +15,17 @@ AFK_TIME = ""
 USERS = {}
 GROUPS = {}
 
+
 def GetChatID(message: Message):
     """Get the group id of the incoming message"""
     return message.chat.id
+
 
 def subtract_time(start, end):
     """Get humanized time"""
     subtracted = humanize.naturaltime(start - end)
     return str(subtracted)
 
-async def delete_message(bot: Client, chat_id: int, message_id: int, delay: int = 30):
-    """Delete a message after a delay"""
-    await asyncio.sleep(delay)
-    await bot.delete_messages(chat_id, message_id)
 
 @Client.on_message(
     ((filters.group & filters.mentioned) | filters.private)
@@ -56,11 +54,10 @@ async def collect_afk_messages(bot: Client, message: Message):
                 last_seen = last_seen.replace("ago", "").strip()
                 text = f"<pre>\n{text.format(last_seen=last_seen, reason=AFK_REASON)}\n</pre>"
 
-            sent_message = await bot.send_message(
+            await bot.send_message(
                 chat_id=GetChatID(message),
                 text=text,
             )
-            asyncio.create_task(delete_message(bot, sent_message.chat.id, sent_message.message_id))
             CHAT_TYPE[GetChatID(message)] = 1
             return
 
@@ -73,11 +70,10 @@ async def collect_afk_messages(bot: Client, message: Message):
                 f"Back soon. 👋\n"
                 f"</blockquote>"
             )
-            sent_message = await bot.send_message(
+            await bot.send_message(
                 chat_id=GetChatID(message),
                 text=text,
             )
-            asyncio.create_task(delete_message(bot, sent_message.chat.id, sent_message.message_id))
         elif CHAT_TYPE[GetChatID(message)] > 50:
             return
         elif CHAT_TYPE[GetChatID(message)] % 5 == 0:
@@ -89,13 +85,13 @@ async def collect_afk_messages(bot: Client, message: Message):
                 f"Back soon. 👋\n"
                 f"</blockquote>"
             )
-            sent_message = await bot.send_message(
+            await bot.send_message(
                 chat_id=GetChatID(message),
                 text=text,
             )
-            asyncio.create_task(delete_message(bot, sent_message.chat.id, sent_message.message_id))
 
         CHAT_TYPE[GetChatID(message)] += 1
+
 
 @Client.on_message(filters.command("afk", prefix) & filters.me, group=3)
 async def afk_set(_, message: Message):
@@ -111,6 +107,7 @@ async def afk_set(_, message: Message):
     AFK_TIME = datetime.now()
 
     await message.delete()
+
 
 @Client.on_message(filters.command("afk", "!") & filters.me, group=3)
 async def afk_unset(_, message: Message):
@@ -133,6 +130,7 @@ async def afk_unset(_, message: Message):
         await asyncio.sleep(5)
 
     await message.delete()
+
 
 @Client.on_message(filters.command("setafkmsg", prefix) & filters.me, group=3)
 async def set_afk_msg(_, message: Message):
@@ -166,6 +164,7 @@ async def set_afk_msg(_, message: Message):
     db.set("core.afk", "afk_msg", afk_msg)
     await message.edit(f"AFK message set to:\n\n<pre>{afk_msg}</pre>")
 
+
 @Client.on_message(filters.me, group=3)
 async def auto_afk_unset(_, message: Message):
     global AFK, AFK_TIME, AFK_REASON, USERS, GROUPS
@@ -187,8 +186,9 @@ async def auto_afk_unset(_, message: Message):
         await asyncio.sleep(5)
         await reply.delete()
 
+
 modules_help["afk"] = {
     "afk [reason]": "Go to AFK mode with a reason.\nUsage: <code>.afk <reason></code>",
     "unafk": "Exit AFK mode.",
     "setafkmsg [reply to message]*": "Set your AFK message. Use <code>{reason}</code> and <code>{last_seen}</code> to indicate where placeholders will be replaced.",
-}
+        }
