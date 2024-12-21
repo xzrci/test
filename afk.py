@@ -43,7 +43,6 @@ async def collect_afk_messages(bot: Client, message: Message):
             text = db.get("core.afk", "afk_msg", None)
             if text is None:
                 text = (
-                    
                     f"<blockquote>I'm unavailable (<i>since {last_seen}</i>).</blockquote>\n"
                     f"<blockquote>"
                     f"<b>Reason:</b> {AFK_REASON}.\n"
@@ -54,41 +53,45 @@ async def collect_afk_messages(bot: Client, message: Message):
                 last_seen = last_seen.replace("ago", "").strip()
                 text = f"<pre>\n{text.format(last_seen=last_seen, reason=AFK_REASON)}\n</pre>"
 
-            await bot.send_message(
+            afk_message = await bot.send_message(
                 chat_id=GetChatID(message),
                 text=text,
             )
             CHAT_TYPE[GetChatID(message)] = 1
+            await asyncio.sleep(30)
+            await afk_message.delete()
             return
 
         if CHAT_TYPE[GetChatID(message)] == 50:
             text = (
-                
                 f"<blockquote>I'm unavailable (<i>since {last_seen}</i>).</blockquote>\n"
                 f"<blockquote>"
                 f"This is the 10th time I've told you I'm AFK right now...\n"
                 f"Back soon. 👋\n"
                 f"</blockquote>"
             )
-            await bot.send_message(
+            afk_message = await bot.send_message(
                 chat_id=GetChatID(message),
                 text=text,
             )
+            await asyncio.sleep(30)
+            await afk_message.delete()
         elif CHAT_TYPE[GetChatID(message)] > 50:
             return
         elif CHAT_TYPE[GetChatID(message)] % 5 == 0:
             text = (
-                
                 f"<blockquote>I'm unavailable (<i>since {last_seen}</i>).</blockquote>\n"
                 f"<blockquote>"
                 f"<b>Reason:</b> {AFK_REASON}.\n"
                 f"Back soon. 👋\n"
                 f"</blockquote>"
             )
-            await bot.send_message(
+            afk_message = await bot.send_message(
                 chat_id=GetChatID(message),
                 text=text,
             )
+            await asyncio.sleep(30)
+            await afk_message.delete()
 
         CHAT_TYPE[GetChatID(message)] += 1
 
